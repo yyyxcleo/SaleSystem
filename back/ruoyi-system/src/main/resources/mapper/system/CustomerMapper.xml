@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.CustomerMapper">
+
+    <resultMap type="Customer" id="CustomerResult">
+        <id     property="cusId"        column="cus_id"       />
+        <result property="cusName"      column="cus_name"     />
+        <result property="cusPhone"      column="cus_phone"     />
+        <result property="postSort"      column="post_sort"     />
+        <result property="status"        column="status"        />
+        <result property="createBy"      column="create_by"     />
+        <result property="createTime"    column="create_time"   />
+        <result property="updateBy"      column="update_by"     />
+        <result property="updateTime"    column="update_time"   />
+        <result property="remark"        column="remark"        />
+    </resultMap>
+
+    <sql id="selectPostVo">
+        select cus_id, cus_name, cus_phone, post_sort, status, create_by, create_time, remark
+        from sys_customer
+    </sql>
+
+    <select id="selectPostList" parameterType="Customer" resultMap="CustomerResult">
+        <include refid="selectPostVo"/>
+        <where>
+            <if test="cusName != null and cusName != ''">
+                AND cus_name like concat('%', #{cusName}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="cusPhone != null and cusPhone != ''">
+                AND cus_phone like concat('%', #{cusPhone}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="selectPostAll" resultMap="CustomerResult">
+        <include refid="selectPostVo"/>
+    </select>
+
+    <select id="selectPostById" parameterType="Long" resultMap="CustomerResult">
+        <include refid="selectPostVo"/>
+        where cus_id = #{cusId}
+    </select>
+
+    <select id="selectPostListByUserId" parameterType="Long" resultType="Long">
+        select p.cus_id
+        from sys_customer p
+                 left join sys_user_post up on up.cus_id = p.cus_id
+                 left join sys_user u on u.user_id = up.user_id
+        where u.user_id = #{userId}
+    </select>
+
+    <select id="selectPostsByUserName" parameterType="String" resultMap="CustomerResult">
+        select p.cus_id, p.cus_phone, p.cus_name
+        from sys_customer p
+                 left join sys_user_post up on up.cus_id = p.cus_id
+                 left join sys_user u on u.user_id = up.user_id
+        where u.user_name = #{userName}
+    </select>
+
+    <select id="checkPostNameUnique" parameterType="String" resultMap="CustomerResult">
+        <include refid="selectPostVo"/>
+        where cus_phone=#{cusPhone} limit 1
+    </select>
+
+    <select id="checkPostCodeUnique" parameterType="String" resultMap="CustomerResult">
+        <include refid="selectPostVo"/>
+        where cus_name=#{cusName} limit 1
+    </select>
+
+    <update id="updatePost" parameterType="Customer">
+        update sys_customer
+        <set>
+            <if test="cusName != null and cusName != ''">cus_name = #{cusName},</if>
+            <if test="cusPhone != null and cusPhone != ''">cus_phone = #{cusPhone},</if>
+            <if test="postSort != null">post_sort = #{postSort},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where cus_id = #{cusId}
+    </update>
+
+    <insert id="insertPost" parameterType="Customer" useGeneratedKeys="true" keyProperty="cusId">
+        insert into sys_customer(cus_id,
+                                 cus_name,
+                                 cus_phone,
+                                 post_sort,
+                                 status,
+                                 remark,
+                                 create_by,
+                                 create_time)
+        values (#{cusId},
+                #{cusName},
+                #{cusPhone},
+                #{postSort},
+                #{status},
+                #{remark},
+                #{createBy},
+                sysdate())
+    </insert>
+
+    <delete id="deletePostById" parameterType="Long">
+        delete from sys_customer where cus_id = #{cusId}
+    </delete>
+
+    <delete id="deletePostByIds" parameterType="Long">
+        delete from sys_customer where cus_id in
+        <foreach collection="array" item="cusId" open="(" separator="," close=")">
+            #{cusId}
+        </foreach>
+    </delete>
+
+</mapper> 

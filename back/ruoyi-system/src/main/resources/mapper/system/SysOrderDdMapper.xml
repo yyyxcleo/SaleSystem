@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysOrderDdMapper">
+
+    <resultMap type="SysOrderDd" id="SysOrderDdResult">
+        <id property="odId" column="od_id"/>
+        <result property="prName" column="pr_name"/>
+        <result property="prNum" column="pr_num"/>
+        <result property="prUnitPrice" column="pr_unit_price"/>
+        <result property="omId" column="om_id"/>
+
+    </resultMap>
+
+    <sql id="selectOrderDdVo">
+        select od_id,
+               pr_name,
+               pr_num,
+               pr_unit_price,
+               om_id
+        from sys_order_dd
+    </sql>
+
+    <select id="selectOrderDdList" parameterType="SysOrderDd" resultMap="SysOrderDdResult">
+        <include refid="selectOrderDdVo"/>
+    </select>
+
+    <update id="updateOrderDd" parameterType="SysOrderDd">
+        update sys_order_dd
+        <set>
+            <if test="prName != null and prName != ''">pr_name = #{prName},</if>
+            <if test="prNum != null and prNum != ''">pr_num = #{prNum},</if>
+            <if test="prUnitPrice != null">pr_unit_price = #{prUnitPrice},</if>
+            <if test="omId !=null">om_id = #{omId}</if>
+        </set>
+        where od_id = #{odId}
+    </update>
+
+    <insert id="insertOrderDd" parameterType="SysOrderDd" useGeneratedKeys="true" keyProperty="odId">
+        insert into sys_order_dd (
+        <if test="prName != null and prName != ''">pr_name,</if>
+        <if test="prNum != null and prNum != ''">pr_num</if>
+        )values(
+        <if test="prName != null and prName != ''">#{prName},</if>
+        <if test="prNum != null and prNum != ''">#{prNum}</if>
+        )
+    </insert>
+    <!--    <insert id="insertOrderMm" parameterType="SysOrderMm" useGeneratedKeys="true" keyProperty="omId">-->
+    <!--        insert into sys_order_mm (-->
+    <!--        <if test="omId != null and omId != 0">om_id,</if>-->
+    <!--        <if test="omCustomer != null and omCustomer != ''">om_customer,</if>-->
+    <!--        <if test="status != null and status != ''">status,</if>-->
+    <!--        <if test="omTotalPrice != null and omTotalPrice != ''">om_total_price,</if>-->
+    <!--        create_time-->
+    <!--        )values(-->
+    <!--        <if test="omId != null and omId != 0">#{omId},</if>-->
+    <!--        <if test="omCustomer != null and omCustomer != ''">#{omCustomer},</if>-->
+    <!--        <if test="status != null and status != ''">#{status},</if>-->
+    <!--        <if test="omTotalPrice != null and omTotalPrice != ''">#{omTotalPrice},</if>-->
+    <!--        sysdate()-->
+    <!--        )-->
+    <!--    </insert>-->
+
+
+    <delete id="deleteOrderDdByIds" parameterType="Long">
+        delete from sys_order_dd where od_id in
+        <foreach collection="array" item="odId" open="(" separator="," close=")">
+            #{odId}
+        </foreach>
+    </delete>
+
+</mapper>

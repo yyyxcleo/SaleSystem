@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysGoodMapper">
+
+
+    <resultMap id="deptResult" type="SysDept">
+        <id property="deptId" column="dept_id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="deptName" column="dept_name"/>
+        <result property="ancestors" column="ancestors"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="leader" column="leader"/>
+        <result property="status" column="dept_status"/>
+    </resultMap>
+
+    <resultMap id="RoleResult" type="SysRole">
+        <id property="roleId" column="role_id"/>
+        <result property="roleName" column="role_name"/>
+        <result property="roleKey" column="role_key"/>
+        <result property="roleSort" column="role_sort"/>
+        <result property="dataScope" column="data_scope"/>
+        <result property="status" column="role_status"/>
+    </resultMap>
+    <resultMap type="SysGood" id="SysGoodResult">
+        <id property="prId" column="pr_id"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="prName" column="pr_name"/>
+        <result property="prPrice" column="pr_price"/>
+        <result property="oriPrice" column="ori_price"/>
+        <result property="prNum" column="pr_num"/>
+        <result property="status" column="status"/>
+<!--        <association property="dept" javaType="SysDept" resultMap="deptResult"/>-->
+<!--        <collection property="roles" javaType="java.util.List" resultMap="RoleResult"/>-->
+    </resultMap>
+    <sql id="selectUserVo">
+        select u.pr_id,
+               u.dept_id,
+               u.pr_name,
+               u.pr_price,
+               u.ori_price,
+               u.pr_num,
+               u.status,
+               d.dept_id,
+               d.parent_id,
+               d.ancestors,
+               d.dept_name,
+               d.order_num,
+               d.leader,
+               d.status as dept_status,
+               r.role_id,
+               r.role_name,
+               r.role_key,
+               r.role_sort,
+               r.data_scope,
+               r.status as role_status
+        from sys_good u
+                 left join sys_cargo d on u.dept_id = d.dept_id
+
+    </sql>
+
+    <select id="selectUserList" parameterType="SysGood" resultMap="SysGoodResult">
+        select u.pr_id,
+        u.dept_id,
+        u.pr_name,
+        u.pr_price,
+        u.ori_price,
+        u.pr_num,
+        u.status,d.dept_name, d.leader from sys_good u
+        left join sys_cargo d on u.dept_id = d.dept_id
+        <if test="prId != null and prId != 0">
+            AND u.pr_id = #{prId}
+        </if>
+        <if test="prName != null and prName != ''">
+            AND u.pr_name like concat('%', #{prName}, '%')
+        </if>
+        <if test="status != null">
+            AND u.status = #{status}
+        </if>
+        <if test="prNum != null">
+            AND u.pr_num =#{prNum}
+        </if>
+
+        <if test="deptId != null and deptId != 0">
+            AND (u.dept_id = #{deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_cargo t WHERE find_in_set(#{deptId},
+            ancestors) ))
+        </if>
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+    </select>
+
+    <select id="selectAllocatedList" parameterType="SysGood" resultMap="SysGoodResult">
+        select distinct u.pr_id,
+        u.dept_id,
+        u.pr_name,
+        u.pr_price,
+        u.ori_price,
+        u.pr_num,
+        u.status
+        from sys_good u
+        left join sys_cargo d on u.dept_id = d.dept_id
+
+        where r.role_id = #{roleId}
+        <if test="prName != null and prName != ''">
+            AND u.pr_name like concat('%', #{prName}, '%')
+        </if>
+        <if test="prNum != null and prNum != ''">
+            AND u.pr_num like concat('%', #{prNum}, '%')
+        </if>
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+    </select>
+
+    <select id="selectUnallocatedList" parameterType="SysGood" resultMap="SysGoodResult">
+        select distinct u.pr_id,
+        u.dept_id,
+        u.pr_name,
+        u.pr_price,
+        u.ori_price,
+        u.pr_num,
+        u.status
+        from sys_good u
+        left join sys_cargo d on u.dept_id = d.dept_id
+        where (r.role_id != #{roleId} or r.role_id IS NULL)
+        <if test="prName != null and prName != ''">
+            AND u.pr_name like concat('%', #{prName}, '%')
+        </if>
+        <if test="prNum != null and prNum != ''">
+            AND u.pr_num like concat('%', #{prNum}, '%')
+        </if>
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+    </select>
+
+    <select id="selectUserByUserName" parameterType="String" resultMap="SysGoodResult">
+        <include refid="selectUserVo"/>
+        where u.pr_name = #{prName}
+    </select>
+
+    <select id="selectUserById" parameterType="Long" resultMap="SysGoodResult">
+        <include refid="selectUserVo"/>
+        where u.pr_id = #{prId}
+    </select>
+
+    <select id="checkUserNameUnique" parameterType="String" resultMap="SysGoodResult">
+        select pr_id, pr_name
+        from sys_good
+        where pr_name = #{prName} limit 1
+    </select>
+
+    <select id="checkPhoneUnique" parameterType="String" resultMap="SysGoodResult">
+        select pr_id, pr_num
+        from sys_good
+        where pr_num = #{prNum} limit 1
+    </select>
+
+    <select id="checkEmailUnique" parameterType="String" resultMap="SysGoodResult">
+        select pr_id
+        from sys_good limit 1
+    </select>
+
+    <insert id="insertUser" parameterType="SysGood" useGeneratedKeys="true" keyProperty="prId">
+        insert into sys_good (pr_id, dept_id, pr_name, pr_price, ori_price, pr_num, status)
+        values (#{prId},
+                #{deptId},
+                #{prName},
+                #{prPrice},
+                #{oriPrice},
+                #{prNum},
+                #{status})
+    </insert>
+
+    <update id="updateUser" parameterType="SysGood">
+        update sys_good
+        <set>
+            <if test="deptId != null and deptId != 0">dept_id = #{deptId},</if>
+            <if test="prName != null and prName != ''">pr_name = #{prName},</if>
+            <if test="prPrice != null and prPrice != ''">pr_price = #{prPrice},</if>
+            <if test="oriPrice != null and oriPrice != ''">ori_price = #{oriPrice},</if>
+            <if test="prNum != null and prNum != ''">pr_num= #{prNum},</if>
+            <if test="status != null and status != ''">status=#{status}</if>
+        </set>
+        where pr_id = #{prId}
+    </update>
+
+    <update id="updateUserStatus" parameterType="SysGood">
+        update sys_good
+        set status = #{status}
+        where pr_id = #{prId}
+    </update>
+
+    <update id="updateUserAvatar" parameterType="SysGood">
+        update sys_good
+        set pr_num = #{prNum}
+        where pr_name = #{prName}
+    </update>
+
+    <update id="resetUserPwd" parameterType="SysGood">
+        update sys_good
+        set pr_num = #{prNum}
+        where pr_name = #{prName}
+    </update>
+
+    <delete id="deleteUserById" parameterType="Long">
+        update sys_good
+        set pr_num = '2'
+        where pr_id = #{prId}
+    </delete>
+
+    <delete id="deleteUserByIds" parameterType="Long">
+        update sys_good set pr_num = '2' where pr_id in
+        <foreach collection="array" item="prId" open="(" separator="," close=")">
+            #{prId}
+        </foreach>
+    </delete>
+
+</mapper> 
